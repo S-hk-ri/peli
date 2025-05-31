@@ -1,0 +1,19 @@
+{
+  "name": "peli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "gameUtils.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}

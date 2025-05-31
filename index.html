@@ -9,7 +9,7 @@
       margin: 0;
       padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
       width: 100vw;
-      height: 100vh;
+      height: calc(var(--vh, 1vh) * 100);
       box-sizing: border-box;
       overflow: hidden;
       background: #111827;
@@ -129,7 +129,7 @@
 <body>
   <div id="startOverlay">
     <h1>Sähkömiehen erikoispeli</h1>
-    <p>Yhdistä molemmin puolin olevista kolmesta kaapelista sama väri. Jos paria ei ole, yhdistä se "MAA"-alueelle.</p>
+    <p>Yhdistä samanväriset kaapelit. Jos paria ei löydy, vedä kaapeli MAA-alueelle.</p>
     <button id="startBtn">Aloita peli</button>
   </div>
   <div id="canvasContainer">
@@ -148,7 +148,14 @@
       <button id="restartBtn" style="display:none;">Aloita uusi peli</button>
     </div>
   </div>
-  <script>
+  <script type="module">
+    import { formatTime, generateWires } from './gameUtils.js';
+    function updateVh() {
+      document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+    }
+    window.addEventListener('resize', updateVh);
+    updateVh();
+
     document.addEventListener('DOMContentLoaded', () => {
       const frame = document.getElementById('canvasFrame');
       const canvas = document.getElementById('gameCanvas');
@@ -181,11 +188,6 @@
       function resizeCanvas() {
         canvas.width = frame.clientWidth;
         canvas.height = frame.clientHeight;
-      }
-      function formatTime(sec) {
-        const m = String(Math.floor(sec/60)).padStart(2,'0');
-        const s = String(sec%60).padStart(2,'0');
-        return `${m}:${s}`;
       }
       function startTimer() {
         elapsedTime = 0;
@@ -223,54 +225,18 @@
           ctx.lineTo(currPos.x, currPos.y); ctx.strokeStyle='#b87333'; ctx.lineWidth=5; ctx.stroke();
         }
       }
-      function shuffle(a) {
-        for (let i = a.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random()*(i+1));
-          [a[i], a[j]] = [a[j], a[i]];
-        }
-        return a;
-      }
-      function generateWires() {
-        wires = [];
-        const sp = canvas.height / 4;
-        let yPositions = [sp, sp*2, sp*3];
-        yPositions = shuffle(yPositions);
-        const includeMaa = Math.random() < 0.05;
-        const p = Math.random();
-        if (p < 0.75) {
-          const cols = shuffle(colors).filter(c => c !== 'maa').slice(0,3);
-          for (let i = 0; i < 3; i++) {
-            const y = yPositions[i];
-            wires.push({ x: 50, y: y, color: cols[i] });
-            wires.push({ x: canvas.width-50, y: y, color: cols[i] });
-          }
-        } else {
-          const cols = shuffle(colors).filter(c => c !== 'maa').slice(0,2);
-          for (let i = 0; i < 2; i++) {
-            const y = yPositions[i];
-            wires.push({ x: 50, y: y, color: cols[i] });
-            wires.push({ x: canvas.width-50, y: y, color: cols[i] });
-          }
-          const odd = shuffle(colors.filter(c => !cols.includes(c) && c !== 'maa'))[0];
-          const y = yPositions[2];
-          const side = Math.random() < 0.5 ? 'left' : 'right';
-          wires.push({ x: side==='left'?50:canvas.width-50, y: y, color: odd });
-        }
-        if (includeMaa) {
-          const y = yPositions[Math.floor(Math.random()*3)];
-          const side = Math.random()<0.5?'left':'right';
-          wires.push({ x: side==='left'?50:canvas.width-50, y: y, color: 'maa' });
-        }
-      }
       function startGame() {
         resizeCanvas();
         score=0; scoreEl.textContent='0';
-        startTimer(); generateWires(); draw();
+        startTimer();
+        wires = generateWires(canvas.width, canvas.height, colors);
+        draw();
         restartBtn.style.display='none'; notifyOverlay.style.display='none'; shockOverlay.style.display='none';
       }
       function getPt(e) {
         const r = canvas.getBoundingClientRect();
-        return { x: (e.clientX||e.touches[0].clientX)-r.left, y: (e.clientY||e.touches[0].clientY)-r.top };
+        const t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e;
+        return { x: t.clientX - r.left, y: t.clientY - r.top };
       }
       function handleEnd(pt) {
         if (!startWire) return;
@@ -291,10 +257,20 @@
           },300);
           dragging=false; startWire=null; draw(); return;
         }
-        if (wires.length===0) { setTimeout(()=>{ generateWires(); draw(); },500); } else { draw(); }
+          if (wires.length===0) {
+            setTimeout(() => {
+              wires = generateWires(canvas.width, canvas.height, colors);
+              draw();
+            }, 500);
+          } else {
+            draw();
+          }
         dragging=false; startWire=null;
       }
-      window.addEventListener('resize', startGame);
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+        draw();
+      });
       startBtn.addEventListener('click', hideStart);
       restartBtn.addEventListener('click', startGame);
       notifyRestartBtn.addEventListener('click', startGame);
