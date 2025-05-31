@@ -9,7 +9,7 @@
       margin: 0;
       padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
       width: 100vw;
-      height: 100vh;
+      height: calc(var(--vh, 1vh) * 100);
       box-sizing: border-box;
       overflow: hidden;
       background: #111827;
@@ -129,7 +129,7 @@
 <body>
   <div id="startOverlay">
     <h1>Sähkömiehen erikoispeli</h1>
-    <p>Yhdistä molemmin puolin olevista kolmesta kaapelista sama väri. Jos paria ei ole, yhdistä se "MAA"-alueelle.</p>
+    <p>Yhdistä samanväriset kaapelit. Jos paria ei löydy, vedä kaapeli MAA-alueelle.</p>
     <button id="startBtn">Aloita peli</button>
   </div>
   <div id="canvasContainer">
@@ -149,6 +149,12 @@
     </div>
   </div>
   <script>
+    function updateVh() {
+      document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+    }
+    window.addEventListener('resize', updateVh);
+    updateVh();
+
     document.addEventListener('DOMContentLoaded', () => {
       const frame = document.getElementById('canvasFrame');
       const canvas = document.getElementById('gameCanvas');
@@ -270,7 +276,8 @@
       }
       function getPt(e) {
         const r = canvas.getBoundingClientRect();
-        return { x: (e.clientX||e.touches[0].clientX)-r.left, y: (e.clientY||e.touches[0].clientY)-r.top };
+        const t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e;
+        return { x: t.clientX - r.left, y: t.clientY - r.top };
       }
       function handleEnd(pt) {
         if (!startWire) return;
@@ -294,7 +301,10 @@
         if (wires.length===0) { setTimeout(()=>{ generateWires(); draw(); },500); } else { draw(); }
         dragging=false; startWire=null;
       }
-      window.addEventListener('resize', startGame);
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+        draw();
+      });
       startBtn.addEventListener('click', hideStart);
       restartBtn.addEventListener('click', startGame);
       notifyRestartBtn.addEventListener('click', startGame);
