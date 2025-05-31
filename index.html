@@ -274,7 +274,7 @@
         shockOverlay.style.display='flex';
         setTimeout(()=>{
           shockOverlay.style.display='none';
-          notifyText.textContent=`Hupsista! Ota huikka! Sait ${score} pistettä ajassa ${Math.floor(elapsedTime/60).toString().padStart(2,'0')}:${(elapsedTime%60).toString().padStart(2,'0')}`;
+          notifyText.textContent=`Hupsista! Sait ${score} pistettä ajassa ${Math.floor(elapsedTime/60).toString().padStart(2,'0')}:${(elapsedTime%60).toString().padStart(2,'0')}`;
           restartBtn.style.display='block';
           notificationOverlay.style.display='flex';
         },300);
