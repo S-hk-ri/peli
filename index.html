@@ -1,608 +1,415 @@
 <!DOCTYPE html>
 <html lang="fi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sähkömiehen erikoispeli</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html, body {
-      height: 100%;
-      overflow: hidden;
-      touch-action: none;
-    }
-
-    #gameFrame {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      max-width: 414px;
-      max-height: 896px;
-      margin: 0 auto;
-      background-color: #111;
-      overflow: hidden;
-      border-radius: 16px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-    }
-
-    #gameCanvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      touch-action: none;
-    }
-
-    #ui-panel {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 20px;
-      background: rgba(255, 255, 255, 0.2);
-      color: #fff;
-      padding: 8px 16px;
-      border-radius: 12px;
-      backdrop-filter: blur(10px);
-      font-family: sans-serif;
-      font-size: 18px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    .overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      color: #fff;
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      font-family: sans-serif;
-    }
-
-    #startOverlay h1 {
-      font-size: 2rem;
-      margin-bottom: 16px;
-    }
-
-    #startOverlay p {
-      font-size: 1rem;
-      margin-bottom: 24px;
-      padding: 0 16px;
-    }
-
-    #startOverlay button {
-      padding: 12px 24px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      background-color: #2ecc71;
-      color: #fff;
-      cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    }
-
-    #notificationOverlay p {
-      font-size: 1.2rem;
-      margin-bottom: 20px;
-      padding: 0 16px;
-    }
-
-    #notificationOverlay button {
-      padding: 10px 20px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      background-color: #3498db;
-      color: #fff;
-      cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    }
-
-    #shockOverlay {
-      background: rgba(0, 0, 0, 0.5);
-    }
-
-    #groundLogo {
-      position: absolute;
-      width: 60px;
-      height: 60px;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      border-radius: 50%;
-      background-color: #fff;
-      overflow: hidden;
-    }
-
-    #groundLogo::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: repeating-linear-gradient(
-        45deg,
-        #d4ee00 0px,
-        #d4ee00 10px,
-        transparent 10px,
-        transparent 20px
-      );
-    }
-
-    #groundLogo::after {
-      content: '';
-      position: absolute;
-      width: 24px;
-      height: 24px;
-      background-color: #d2691e;
-      border-radius: 50%;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.5);
-    }
+    /* Yleiset asetukset */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background-color: #222; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif; overflow: hidden; }
+    #game-container { position: relative; width: 414px; height: 896px; max-width: 100%; max-height: 100%; border: 16px solid #555; border-radius: 16px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); background-color: #000; }
+    canvas { display: block; width: 100%; height: 100%; }
+    /* UI-paneeli ylhäällä */
+    #ui-panel { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); padding: 8px 16px; border-radius: 12px; display: flex; gap: 20px; align-items: center; color: #fff; font-size: 18px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); }
+    #ui-panel span { display: flex; align-items: center; gap: 6px; }
+    /* Overlay:t */
+    .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center; flex-direction: column; color: #fff; z-index: 10; }
+    .overlay h1 { font-size: 32px; margin-bottom: 16px; }
+    .overlay p { font-size: 16px; margin-bottom: 24px; text-align: center; padding: 0 16px; }
+    .overlay button { padding: 12px 24px; font-size: 18px; border: none; border-radius: 8px; background-color: #28a745; color: #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+    .overlay button:active { transform: scale(0.98); }
+    #shockOverlay { display: none; }
+    #notificationOverlay { display: false; }
+    /* Maa-logo */
+    #groundLogo { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); width: 60px; height: 60px; border-radius: 50%; background: #ccff00; display: flex; justify-content: center; align-items: center; z-index: 5; pointer-events: none; }
+    #groundLogo::after { content: ""; position: absolute; width: 20px; height: 20px; background: #b87333; border-radius: 50%; z-index: 2; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
   </style>
 </head>
 <body>
-  <div id="gameFrame">
+  <div id="game-container">
     <canvas id="gameCanvas"></canvas>
-
     <div id="ui-panel">
       <span id="scoreDisplay">🪙 0</span>
       <span id="timeDisplay">⏱️ 00:00</span>
     </div>
-
+    <!-- Start Overlay -->
     <div id="startOverlay" class="overlay">
       <h1>Sähkömiehen erikoispeli</h1>
-      <p>Yhdistä samanväriset sähköjohdot vastakkaisilla puolilla näyttöä. Jos paria ei löydy, vedä johto MAA-alueelle.</p>
-      <button id="startButton">Aloita peli</button>
+      <p>Yhdistä värillisiä sähköjohtoja toisiinsa. Jos paria ei löydy, maadoita johdot joko 'maa'-johdolla tai MAA-alueelle. Saat 20 pistettä erityisestä maadoituksesta!</p>
+      <button id="startBtn">Aloita peli</button>
     </div>
-
+    <!-- Shock Overlay -->
     <div id="shockOverlay" class="overlay"></div>
-
+    <!-- Notification Overlay -->
     <div id="notificationOverlay" class="overlay">
       <p id="notifyText"></p>
-      <button id="restartButton">Aloita uusi peli</button>
+      <button id="restartBtn">Aloita uusi peli</button>
     </div>
-
+    <!-- Maa Logo -->
     <div id="groundLogo"></div>
   </div>
 
   <script>
-    /***********************************************
-     *            UTILITY-FUNKTIOITA               *
-     ***********************************************/
-    function shuffle(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    }
-
-    function getPt(event, canvas) {
-      const rect = canvas.getBoundingClientRect();
-      let x, y;
-      if (event.touches) {
-        x = event.touches[0].clientX - rect.left;
-        y = event.touches[0].clientY - rect.top;
-      } else {
-        x = event.clientX - rect.left;
-        y = event.clientY - rect.top;
-      }
-      return { x, y };
-    }
-
-    function hypot(dx, dy) {
-      return Math.sqrt(dx * dx + dy * dy);
-    }
-
-    function formatTime(totalSeconds) {
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      const mm = String(minutes).padStart(2, '0');
-      const ss = String(seconds).padStart(2, '0');
-      return `${mm}:${ss}`;
-    }
-
-    /***********************************************
-     *           LOCALSTORAGE-KÄSITTELY            *
-     ***********************************************/
-    const KEY_MAX_SCORE = 'maxScore';
-
-    function getMaxScore() {
-      const stored = localStorage.getItem(KEY_MAX_SCORE);
-      return stored ? Number(stored) : 0;
-    }
-
-    function setMaxScore(score) {
-      const current = getMaxScore();
-      if (score > current) {
-        localStorage.setItem(KEY_MAX_SCORE, String(score));
-      }
-    }
-
-    /***********************************************
-     *                UI-LOGIIKKA                 *
-     ***********************************************/
-    const scoreEl = document.getElementById('scoreDisplay');
-    const timeEl = document.getElementById('timeDisplay');
-    const startOverlay = document.getElementById('startOverlay');
-    const shockOverlay = document.getElementById('shockOverlay');
-    const notificationOverlay = document.getElementById('notificationOverlay');
-    const notifyText = document.getElementById('notifyText');
-    const restartBtn = document.getElementById('restartButton');
-    const startBtn = document.getElementById('startButton');
-
-    function updateScoreDisplay(score) {
-      scoreEl.textContent = `🪙 ${score}`;
-    }
-
-    function updateTimeDisplay(elapsedSeconds) {
-      timeEl.textContent = `⏱️ ${formatTime(elapsedSeconds)}`;
-    }
-
-    function showStartOverlay() {
-      startOverlay.style.display = 'flex';
-    }
-
-    function hideStartOverlay() {
-      startOverlay.style.display = 'none';
-    }
-
-    function showShockOverlay(duration = 300) {
-      shockOverlay.style.display = 'flex';
-      setTimeout(() => {
-        shockOverlay.style.display = 'none';
-      }, duration);
-    }
-
-    function showNotificationOverlay(score, elapsedTime) {
-      notifyText.textContent = `Hupsista! Ota huikka! Sait ${score} pistettä ajassa ${formatTime(elapsedTime)}`;
-      notificationOverlay.style.display = 'flex';
-    }
-
-    function hideNotificationOverlay() {
-      notificationOverlay.style.display = 'none';
-    }
-
-    function bindStartButton(callback) {
-      startBtn.addEventListener('click', callback);
-    }
-
-    function bindRestartButton(callback) {
-      restartBtn.addEventListener('click', callback);
-    }
-
-    /***********************************************
-     *          DRAW-LOGIIKKA (CANVAS)             *
-     ***********************************************/
-    let canvas, ctx;
-    const wireRadius = 30;
-
-    function initCanvas() {
-      canvas = document.getElementById('gameCanvas');
-      ctx = canvas.getContext('2d');
-      resizeCanvas();
-      window.addEventListener('resize', resizeCanvas);
-    }
-
-    function resizeCanvas() {
-      const frame = document.getElementById('gameFrame');
-      const rect = frame.getBoundingClientRect();
-      const ratio = window.devicePixelRatio || 1;
-      canvas.width = rect.width * ratio;
-      canvas.height = rect.height * ratio;
-      canvas.style.width = `${rect.width}px`;
-      canvas.style.height = `${rect.height}px`;
-      ctx.scale(ratio, ratio);
-    }
-
-    function clearCanvas() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-
-    // Piirtää yksittäisen johdon
-    function drawWire(wire) {
-      const { x, y, color } = wire;
-      // Ulkokuori
-      ctx.beginPath();
-      ctx.arc(x, y, wireRadius, 0, 2 * Math.PI);
-      ctx.fillStyle = '#fff';
-      ctx.fill();
-      ctx.closePath();
-
-      // Diagonaaliraita ilman xor
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(x, y, wireRadius, 0, 2 * Math.PI);
-      ctx.clip();
-      const patternCanvas = document.createElement('canvas');
-      patternCanvas.width = patternCanvas.height = 20;
-      const pctx = patternCanvas.getContext('2d');
-      pctx.fillStyle = color === 'maa' ? '#888' : color;
-      pctx.fillRect(0, 0, 20, 20);
-      pctx.strokeStyle = 'rgba(255,255,255,0.6)';
-      pctx.lineWidth = 4;
-      pctx.beginPath();
-      pctx.moveTo(0, 0);
-      pctx.lineTo(20, 20);
-      pctx.moveTo(20, 0);
-      pctx.lineTo(0, 20);
-      pctx.stroke();
-      const pattern = ctx.createPattern(patternCanvas, 'repeat');
-      ctx.fillStyle = pattern;
-      ctx.fillRect(x - wireRadius, y - wireRadius, wireRadius * 2, wireRadius * 2);
-      ctx.restore();
-
-      // Sisempi väripallo
-      if (color !== 'maa') {
-        ctx.beginPath();
-        ctx.arc(x, y, wireRadius * 0.7, 0, 2 * Math.PI);
-        ctx.fillStyle = color;
-        ctx.fill();
-        ctx.closePath();
-      }
-
-      // Kupariydin
-      ctx.beginPath();
-      ctx.arc(x, y, wireRadius * 0.3, 0, 2 * Math.PI);
-      ctx.fillStyle = '#d2691e';
-      ctx.shadowColor = 'rgba(0,0,0,0.4)';
-      ctx.shadowBlur = 3;
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.closePath();
-    }
-
-    function drawAll(wires, startWire, currPos) {
-      clearCanvas();
-      wires.forEach(w => drawWire(w));
-      if (startWire && currPos) {
-        ctx.beginPath();
-        ctx.moveTo(startWire.x, startWire.y);
-        ctx.lineTo(currPos.x, currPos.y);
-        ctx.lineWidth = 6;
-        ctx.strokeStyle = startWire.color === 'maa' ? '#888' : startWire.color;
-        ctx.lineCap = 'round';
-        ctx.stroke();
-        ctx.closePath();
-      }
-    }
-
-    /***********************************************
-     *            PELILOGIIKKA (GAME)              *
-     ***********************************************/
-    const gameState = {
-      wires: [],
-      score: 0,
-      elapsedTime: 0,
-      timerInterval: null
-    };
-
-    const COLORS = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
-    const MAX_PAIRS = 3;
-    const GROUND_RADIUS = 30;
-
-    function startGame() {
-      gameState.score = 0;
-      gameState.elapsedTime = 0;
-      updateScoreDisplay(0);
-      updateTimeDisplay(0);
-      hideStartOverlay();
-      hideNotificationOverlay();
-      initCanvas();
-      generateWires();
-      drawAll(gameState.wires, null, null);
-      startTimer();
-    }
-
-    function startTimer() {
-      if (gameState.timerInterval) clearInterval(gameState.timerInterval);
-      gameState.timerInterval = setInterval(() => {
-        gameState.elapsedTime += 1;
-        updateTimeDisplay(gameState.elapsedTime);
-      }, 1000);
-    }
-
-    function stopTimer() {
-      clearInterval(gameState.timerInterval);
-      gameState.timerInterval = null;
-    }
-
-    function updateScore(points) {
-      gameState.score += points;
-      updateScoreDisplay(gameState.score);
-      if (gameState.score > getMaxScore()) {
-        setMaxScore(gameState.score);
-      }
-    }
-
-    function generateWires() {
-      const width = canvas.width / (window.devicePixelRatio || 1);
-      const height = canvas.height / (window.devicePixelRatio || 1);
-      const sp = height / 4;
-
-      let yPositions = [sp, sp * 2, sp * 3];
-      yPositions = shuffle(yPositions);
-
-      const wires = [];
-      if (Math.random() < 0.05) {
-        const side = Math.random() < 0.5 ? 'left' : 'right';
-        const idx = Math.floor(Math.random() * 3);
-        const xPos = side === 'left' ? 50 : width - 50;
-        wires.push({ x: xPos, y: yPositions[idx], color: 'maa' });
-      }
-
-      const isTwoPairsOneSingle = Math.random() >= 0.75;
-
-      if (!isTwoPairsOneSingle) {
-        const selected = shuffle(COLORS.slice()).slice(0, MAX_PAIRS);
-        for (let i = 0; i < MAX_PAIRS; i++) {
-          const color = selected[i];
-          wires.push({ x: 50, y: yPositions[i], color });
-          wires.push({ x: width - 50, y: yPositions[i], color });
-        }
-      } else {
-        const selected = shuffle(COLORS.slice()).slice(0, 2);
-        for (let i = 0; i < 2; i++) {
-          const color = selected[i];
-          wires.push({ x: 50, y: yPositions[i], color });
-          wires.push({ x: width - 50, y: yPositions[i], color });
-        }
-        const remainingColors = COLORS.filter(c => !selected.includes(c));
-        const singleColor = shuffle(remainingColors).slice(0, 1)[0];
-        const side = Math.random() < 0.5 ? 'left' : 'right';
-        const idx = 2;
-        const xPos = side === 'left' ? 50 : width - 50;
-        wires.push({ x: xPos, y: yPositions[idx], color: singleColor });
-      }
-
-      gameState.wires = shuffle(wires);
-    }
-
-    function handleEndSelection(startWire, pt) {
-      const wires = gameState.wires;
-      if (!startWire) return;
-
-      const target = wires.find(
-        w => w !== startWire && hypot(w.x - pt.x, w.y - pt.y) < wireRadius
-      );
-
-      if (target && target.color === startWire.color && startWire.color !== 'maa') {
-        gameState.wires = wires.filter(w => w !== startWire && w !== target);
-        updateScore(10);
-        checkRoundCompletion();
-        return;
-      }
-
-      const centerX = (canvas.width / (window.devicePixelRatio || 1)) / 2;
-      const centerY = (canvas.height / (window.devicePixelRatio || 1)) - 60;
-      const distanceToGround = hypot(pt.x - centerX, pt.y - centerY);
-
-      const remainingSameColor = wires.filter(
-        w => w.color === startWire.color && w !== startWire
-      ).length;
-
-      if (
-        distanceToGround < GROUND_RADIUS &&
-        (startWire.color === 'maa' || remainingSameColor === 0)
-      ) {
-        gameState.wires = wires.filter(w => w !== startWire);
-        updateScore(10);
-        checkRoundCompletion();
-        return;
-      }
-
-      stopTimer();
-      showShockOverlay(300);
-      setTimeout(() => {
-        showNotificationOverlay(gameState.score, gameState.elapsedTime);
-      }, 300);
-    }
-
-    function checkRoundCompletion() {
-      if (gameState.wires.length === 0) {
-        setTimeout(() => {
-          generateWires();
-          drawAll(gameState.wires, null, null);
-        }, 500);
-      } else {
-        drawAll(gameState.wires, null, null);
-      }
-    }
-
-    /***********************************************
-     *         SYÖTTEEN KÄSITTELY (INPUT)           *
-     ***********************************************/
-    let dragging = false;
-    let startWire = null;
-    let currPos = null;
-
-    function initInput() {
-      canvas = document.getElementById('gameCanvas');
-      canvas.addEventListener('mousedown', onDown);
-      canvas.addEventListener('mousemove', onMove);
-      canvas.addEventListener('mouseup', onUp);
-      canvas.addEventListener('touchstart', onTouchStart, { passive: false });
-      canvas.addEventListener('touchmove', onTouchMove, { passive: false });
-      canvas.addEventListener('touchend', onTouchEnd, { passive: false });
-    }
-
-    function onDown(e) {
-      e.preventDefault();
-      const pt = getPt(e, canvas);
-      for (let w of gameState.wires) {
-        if (hypot(w.x - pt.x, w.y - pt.y) < wireRadius) {
-          startWire = w;
-          dragging = true;
-          currPos = { x: pt.x, y: pt.y };
-          drawAll(gameState.wires, startWire, currPos);
-          return;
-        }
-      }
-    }
-
-    function onMove(e) {
-      if (!dragging) return;
-      e.preventDefault();
-      const pt = getPt(e, canvas);
-      currPos = { x: pt.x, y: pt.y };
-      drawAll(gameState.wires, startWire, currPos);
-    }
-
-    function onUp(e) {
-      if (!dragging) return;
-      e.preventDefault();
-      const pt = getPt(e, canvas);
-      dragging = false;
-      drawAll(gameState.wires, startWire, null);
-      handleEndSelection(startWire, { x: pt.x, y: pt.y });
-      startWire = null;
-      currPos = null;
-    }
-
-    function onTouchStart(e) {
-      e.preventDefault();
-      onDown(e);
-    }
-
-    function onTouchMove(e) {
-      e.preventDefault();
-      onMove(e);
-    }
-
-    function onTouchEnd(e) {
-      e.preventDefault();
-      onUp(e);
-    }
-
-    /***********************************************
-     *                MAIN (ALOITUS)               *
-     ***********************************************/
     document.addEventListener('DOMContentLoaded', () => {
-      showStartOverlay();
-      bindStartButton(() => {
+      // Elementit
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+      const startOverlay = document.getElementById('startOverlay');
+      const shockOverlay = document.getElementById('shockOverlay');
+      const notificationOverlay = document.getElementById('notificationOverlay');
+      const notifyText = document.getElementById('notifyText');
+      const startBtn = document.getElementById('startBtn');
+      const restartBtn = document.getElementById('restartBtn');
+      const scoreDisplay = document.getElementById('scoreDisplay');
+      const timeDisplay = document.getElementById('timeDisplay');
+      const groundLogo = document.getElementById('groundLogo');
+
+      // Pelivariabelit
+      let wires = [];
+      let score = 0;
+      let maxScore = parseInt(localStorage.getItem('maxScore')) || 0;
+      let elapsedTime = 0;
+      let timerInterval = null;
+      let dragging = false;
+      let startWire = null;
+      let currPos = { x: 0, y: 0 };
+      const wireRadius = 30;
+      let effects = [];
+
+      // Canvas-koko suhteessa kontaineriin
+      function resizeCanvas() {
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      // Aloita- ja uudelleenkäynnistys-nappien kuuntelijat
+      startBtn.addEventListener('click', () => {
+        hideStart();
         startGame();
-        initInput();
       });
-      bindRestartButton(() => {
+      restartBtn.addEventListener('click', () => {
+        hideNotification();
         startGame();
       });
+
+      // Piirtofunktiot
+      function drawWire(x, y, color) {
+        // Ulkokuori - valkoinen ympyrä
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x, y, wireRadius, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.clip();
+        // Vinoviivat
+        ctx.strokeStyle = '#ccc';
+        ctx.lineWidth = 4;
+        const stripeSpacing = 10;
+        for (let dx = -wireRadius * 2; dx < wireRadius * 2; dx += stripeSpacing) {
+          ctx.beginPath();
+          ctx.moveTo(x + dx, y - wireRadius);
+          ctx.lineTo(x + dx + wireRadius * 2, y + wireRadius);
+          ctx.stroke();
+        }
+        ctx.restore();
+        // Sisempi värillinen ympyrä
+        ctx.beginPath();
+        ctx.arc(x, y, wireRadius * 0.7, 0, Math.PI * 2);
+        ctx.fillStyle = color === 'maa' ? '#888' : color;
+        ctx.fill();
+        // Kupariydin
+        ctx.beginPath();
+        ctx.arc(x, y, wireRadius * 0.3, 0, Math.PI * 2);
+        ctx.fillStyle = '#b87333';
+        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+        ctx.shadowBlur = 4;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Piirrä johdot
+        wires.forEach(w => drawWire(w.x, w.y, w.color));
+        // Jos vedetään, piirrä väliviiva
+        if (dragging && startWire) {
+          ctx.beginPath();
+          ctx.moveTo(startWire.x, startWire.y);
+          ctx.lineTo(currPos.x, currPos.y);
+          ctx.strokeStyle = startWire.color === 'maa' ? '#888' : startWire.color;
+          ctx.lineWidth = 6;
+          ctx.stroke();
+        }
+        // Piirrä efektit
+        for (let i = effects.length - 1; i >= 0; i--) {
+          const ef = effects[i];
+          const maxRadius = 60;
+          const progress = ef.frame / 10;
+          const radius = progress * maxRadius;
+          const alpha = 1 - progress;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(ef.x, ef.y, radius, 0, 2 * Math.PI);
+          ctx.strokeStyle = `rgba(0,255,0,${alpha})`;
+          ctx.lineWidth = 4;
+          ctx.stroke();
+          ctx.restore();
+          ef.frame++;
+          if (ef.frame > 10) {
+            effects.splice(i, 1);
+          }
+        }
+      }
+
+      // Pelilogiikka
+      function generateWires() {
+        wires = [];
+        const colors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+        // Luo erilliset y-koordinaatit vasemmalle ja oikealle kolmelle tasolle
+        const leftY = [canvas.height / 5, (canvas.height / 5) * 2, (canvas.height / 5) * 3, (canvas.height / 5) * 4];
+        const rightY = [...leftY];
+        shuffle(leftY);
+        shuffle(rightY);
+        const includeMaa = Math.random() < 0.05;
+        if (includeMaa) {
+          const y = leftY.pop();
+          const xMaa = Math.random() < 0.5 ? wireRadius + 20 : canvas.width - wireRadius - 20;
+          wires.push({ x: xMaa, y: y, color: 'maa' });
+        }
+        if (Math.random() < 0.75) {
+          // 3 paria: sijoitetaan kukin pareittain, mutta eri korkeusasemaan vasemmalle ja oikealle
+          shuffle(colors);
+          for (let i = 0; i < 3; i++) {
+            const color = colors[i];
+            const xLeft = wireRadius + 20;
+            const xRight = canvas.width - wireRadius - 20;
+            const yL = leftY.pop();
+            const yR = rightY.pop();
+            wires.push({ x: xLeft, y: yL, color: color });
+            wires.push({ x: xRight, y: yR, color: color });
+          }
+        } else {
+          // 2 paria + 1 poikkeus
+          shuffle(colors);
+          for (let i = 0; i < 2; i++) {
+            const color = colors[i];
+            const xLeft = wireRadius + 20;
+            const xRight = canvas.width - wireRadius - 20;
+            const yL = leftY.pop();
+            const yR = rightY.pop();
+            wires.push({ x: xLeft, y: yL, color: color });
+            wires.push({ x: xRight, y: yR, color: color });
+          }
+          // poikkeusväri yksittäin sijoitus satunnaiselle puolelle ja satunnaiseen vapaaseen korkeusasemaan
+          const oddColor = colors[2];
+          const side = Math.random() < 0.5 ? 'left' : 'right';
+          const xOdd = side === 'left' ? wireRadius + 20 : canvas.width - wireRadius - 20;
+          const yArray = side === 'left' ? leftY : rightY;
+          const yOdd = yArray.pop() || Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
+          wires.push({ x: xOdd, y: yOdd, color: oddColor });
+        }
+        draw();
+      }
+
+      function startGame() {
+        score = 0;
+        elapsedTime = 0;
+        updateScoreDisplay();
+        updateTimeDisplay();
+        startTimer();
+        generateWires();
+        hideAllOverlays();
+      }
+
+      function gameOver() {
+        stopTimer();
+        notifyText.textContent = `Hupsista! Ota huikka! Sait ${score} pistettä ajassa ${formatTime(elapsedTime)}`;
+        showNotification();
+        if (score > maxScore) {
+          maxScore = score;
+          localStorage.setItem('maxScore', maxScore);
+        }
+      }
+
+      function handleEnd(pt) {
+        if (!startWire) return;
+        // Etsi tavoitejohto
+        const tgt = wires.find(w => w !== startWire && Math.hypot(w.x - pt.x, w.y - pt.y) < wireRadius);
+        // Tarkista parillinen väri
+        if (tgt && tgt.color === startWire.color && startWire.color !== 'maa') {
+          wires = wires.filter(w => w !== startWire && w !== tgt);
+          updateScore(10);
+          if (wires.length === 0) {
+            setTimeout(() => {
+              generateWires();
+            }, 500);
+          }
+          draw();
+        } else if (tgt && tgt.color === 'maa' && startWire.color !== 'maa' && wires.filter(w => w.color === startWire.color).length === 1) {
+          // Yhdistetään yksittäinen johto maa-johtoon
+          wires = wires.filter(w => w !== startWire && w !== tgt);
+          effects.push({ x: tgt.x, y: tgt.y, frame: 0 });
+          updateScore(20);
+          if (wires.length === 0) {
+            setTimeout(() => {
+              generateWires();
+            }, 500);
+          }
+          draw();
+        } else {
+          // Tarkista maa-yhteys ground-logoalueelle
+          const gx = canvas.width / 2;
+          const gy = canvas.height - 60;
+          if (Math.hypot(pt.x - gx, pt.y - gy) < 30 && (startWire.color === 'maa' || wires.filter(w => w.color === startWire.color).length === 1)) {
+            wires = wires.filter(w => w !== startWire);
+            updateScore(10);
+            if (wires.length === 0) {
+              setTimeout(() => {
+                generateWires();
+              }, 500);
+            }
+            draw();
+          } else {
+            // Virhe
+            stopTimer();
+            showShock();
+          }
+        }
+        startWire = null;
+        dragging = false;
+      }
+
+      function updateScore(points) {
+        score += points;
+        updateScoreDisplay();
+      }
+
+      function updateScoreDisplay() {
+        scoreDisplay.textContent = `🪙 ${score}`;
+      }
+
+      function startTimer() {
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+          elapsedTime++;
+          updateTimeDisplay();
+        }, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+      }
+
+      function updateTimeDisplay() {
+        timeDisplay.textContent = `⏱️ ${formatTime(elapsedTime)}`;
+      }
+
+      function formatTime(sec) {
+        const m = Math.floor(sec / 60).toString().padStart(2, '0');
+        const s = (sec % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+      }
+
+      function showShock() {
+        shockOverlay.style.display = 'flex';
+        setTimeout(() => {
+          shockOverlay.style.display = 'none';
+          notifyText.textContent = `Hupsista! Ota huikka! Sait ${score} pistettä ajassa ${formatTime(elapsedTime)}`;
+          showNotification();
+        }, 300);
+      }
+
+      function showNotification() {
+        notificationOverlay.style.display = 'flex';
+      }
+      function hideNotification() {
+        notificationOverlay.style.display = 'none';
+      }
+
+      function hideStart() {
+        startOverlay.style.display = 'none';
+      }
+
+      function hideAllOverlays() {
+        startOverlay.style.display = 'none';
+        shockOverlay.style.display = 'none';
+        notificationOverlay.style.display = 'none';
+      }
+
+      // Apufunktiot
+      function getPt(e) {
+        const rect = canvas.getBoundingClientRect();
+        let x, y;
+        if (e.touches) {
+          x = e.touches[0].clientX - rect.left;
+          y = e.touches[0].clientY - rect.top;
+        } else {
+          x = e.clientX - rect.left;
+          y = e.clientY - rect.top;
+        }
+        return { x, y };
+      }
+
+      function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      }
+
+      // Tapahtumankuuntelijat
+      canvas.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const pt = getPt(e);
+        const found = wires.find(w => Math.hypot(w.x - pt.x, w.y - pt.y) < wireRadius);
+        if (found) {
+          startWire = found;
+          dragging = true;
+        }
+      });
+      canvas.addEventListener('mousemove', (e) => {
+        if (dragging && startWire) {
+          currPos = getPt(e);
+          draw();
+        }
+      });
+      canvas.addEventListener('mouseup', (e) => {
+        if (dragging) {
+          const pt = getPt(e);
+          handleEnd(pt);
+        }
+      });
+
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const pt = getPt(e);
+        const found = wires.find(w => Math.hypot(w.x - pt.x, w.y - pt.y) < wireRadius);
+        if (found) {
+          startWire = found;
+          dragging = true;
+        }
+      }, { passive: false });
+      canvas.addEventListener('touchmove', (e) => {
+        if (dragging && startWire) {
+          const pt = getPt(e);
+          currPos = pt;
+          draw();
+        }
+      }, { passive: false });
+      canvas.addEventListener('touchend', (e) => {
+        if (dragging) {
+          const pt = currPos;
+          handleEnd(pt);
+        }
+      });
+
+      // Näytä alku-overlay
+      startOverlay.style.display = 'flex';
+      updateScoreDisplay();
+      updateTimeDisplay();
     });
   </script>
 </body>
